@@ -218,3 +218,34 @@ Gentoo penguins:
 Chinstrap penguins: 
 
 + Palmer Station Antarctica LTER and K. Gorman, 2020. Structural size measurements and isotopic signatures of foraging among adult male and female Chinstrap penguin (*Pygoscelis antarcticus*) nesting along the Palmer Archipelago near Palmer Station, 2007-2009 ver 6. Environmental Data Initiative. https://doi.org/10.6073/pasta/c14dfcfada8ea13a17536e73eb6fbe9e (Accessed 2020-06-08).
+
+# How? Key package internals...
+
+## 1. prepping raw data
+
+```{r}
+prep <- readLines(con = "data-raw/penguins.R")
+```
+
+```{r, code = prep, eval = F}
+```
+
+## 2. Export the data:
+
+```{r}
+export <- readLines("R/penguins.R")
+```
+
+
+```{r, code = export, eval = F}
+```
+
+
+---
+
+## 3. What are the complete package repo contents?
+
+```{r}
+fs::dir_tree(recurse = T)
+```
+

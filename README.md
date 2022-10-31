@@ -110,7 +110,7 @@ regarding the data license & use.
 You can find these and more code examples for exploring palmerpenguins
 in `vignette("examples")`.
 
-Penguins are fun to summarize! For example:
+Penguins are fun to summarize\! For example:
 
 ``` r
 library(tidyverse)
@@ -133,7 +133,7 @@ penguins %>%
 #> 3 Gentoo              47.5          15.0              217.       5076. 2008.
 ```
 
-Penguins are fun to visualize! For example:
+Penguins are fun to visualize\! For example:
 
 <img src="man/figures/README-mass-flipper-1.png" width="75%" style="display: block; margin: auto;" />
 
@@ -143,7 +143,7 @@ Penguins are fun to visualize! For example:
 
 You can download palmerpenguins art (useful for teaching with the data)
 in `vignette("art")`. If you use this artwork, please cite with:
-“Artwork by @allison_horst”.
+“Artwork by @allison\_horst”.
 
 ### Meet the Palmer penguins
 
@@ -156,7 +156,7 @@ The culmen is the upper ridge of a bird’s bill. In the simplified
 `bill_length_mm` and `bill_depth_mm` to be more intuitive.
 
 For this penguin data, the culmen (bill) length and depth are measured
-as shown below (thanks Kristen Gorman for clarifying!):
+as shown below (thanks Kristen Gorman for clarifying\!):
 
 <img src="man/figures/culmen_depth.png" width="75%" style="display: block; margin: auto;" />
 
@@ -179,8 +179,7 @@ citation("palmerpenguins")
 #> 
 #>   Horst AM, Hill AP, Gorman KB (2020). palmerpenguins: Palmer
 #>   Archipelago (Antarctica) penguin data. R package version 0.1.0.
-#>   https://allisonhorst.github.io/palmerpenguins/. doi:
-#>   10.5281/zenodo.3960218.
+#>   https://allisonhorst.github.io/palmerpenguins/
 #> 
 #> A BibTeX entry for LaTeX users is
 #> 
@@ -189,7 +188,6 @@ citation("palmerpenguins")
 #>     author = {Allison Marie Horst and Alison Presmanes Hill and Kristen B Gorman},
 #>     year = {2020},
 #>     note = {R package version 0.1.0},
-#>     doi = {10.5281/zenodo.3960218},
 #>     url = {https://allisonhorst.github.io/palmerpenguins/},
 #>   }
 ```
@@ -207,7 +205,7 @@ Agreement: <https://lternet.edu/data-access-policy/>.”
 
 **Data originally published in:**
 
--   Gorman KB, Williams TD, Fraser WR (2014). Ecological sexual
+  - Gorman KB, Williams TD, Fraser WR (2014). Ecological sexual
     dimorphism and environmental variability within a community of
     Antarctic penguins (genus *Pygoscelis*). PLoS ONE 9(3):e90081.
     <https://doi.org/10.1371/journal.pone.0090081>
@@ -216,7 +214,7 @@ Agreement: <https://lternet.edu/data-access-policy/>.”
 
 Adélie penguins:
 
--   Palmer Station Antarctica LTER and K. Gorman, 2020. Structural size
+  - Palmer Station Antarctica LTER and K. Gorman, 2020. Structural size
     measurements and isotopic signatures of foraging among adult male
     and female Adélie penguins (*Pygoscelis adeliae*) nesting along the
     Palmer Archipelago near Palmer Station, 2007-2009 ver 5.
@@ -226,7 +224,7 @@ Adélie penguins:
 
 Gentoo penguins:
 
--   Palmer Station Antarctica LTER and K. Gorman, 2020. Structural size
+  - Palmer Station Antarctica LTER and K. Gorman, 2020. Structural size
     measurements and isotopic signatures of foraging among adult male
     and female Gentoo penguin (*Pygoscelis papua*) nesting along the
     Palmer Archipelago near Palmer Station, 2007-2009 ver 5.
@@ -236,10 +234,172 @@ Gentoo penguins:
 
 Chinstrap penguins:
 
--   Palmer Station Antarctica LTER and K. Gorman, 2020. Structural size
+  - Palmer Station Antarctica LTER and K. Gorman, 2020. Structural size
     measurements and isotopic signatures of foraging among adult male
     and female Chinstrap penguin (*Pygoscelis antarcticus*) nesting
     along the Palmer Archipelago near Palmer Station, 2007-2009 ver 6.
     Environmental Data Initiative.
     <https://doi.org/10.6073/pasta/c14dfcfada8ea13a17536e73eb6fbe9e>
     (Accessed 2020-06-08).
+
+# How? Key package internals…
+
+## 1\. prepping raw data
+
+``` r
+prep <- readLines(con = "data-raw/penguins.R")
+```
+
+``` r
+library(tidyverse)
+library(here)
+library(janitor)
+library(lubridate)
+
+# Download raw data -------------------------------------------------------
+
+# Adelie penguin data from: https://doi.org/10.6073/pasta/abc50eed9138b75f54eaada0841b9b86
+uri_adelie <- "https://portal.edirepository.org/nis/dataviewer?packageid=knb-lter-pal.219.3&entityid=002f3893385f710df69eeebe893144ff"
+
+# Gentoo penguin data from: https://doi.org/10.6073/pasta/2b1cff60f81640f182433d23e68541ce
+uri_gentoo <- "https://portal.edirepository.org/nis/dataviewer?packageid=knb-lter-pal.220.3&entityid=e03b43c924f226486f2f0ab6709d2381"
+
+# Chinstrap penguin data from: https://doi.org/10.6073/pasta/409c808f8fc9899d02401bdb04580af7
+uri_chinstrap <- "https://portal.edirepository.org/nis/dataviewer?packageid=knb-lter-pal.221.2&entityid=fe853aa8f7a59aa84cdd3197619ef462"
+
+# Combining the URIs
+uris <- c(uri_adelie, uri_gentoo, uri_chinstrap)
+
+# Downloading and importing data
+penguins_raw_df <- uris %>%
+  map_dfr(read_csv, na = c("", "NA", "."), col_types = list()) %>%
+  as.data.frame()
+
+write_csv(penguins_raw_df, here::here("inst", "extdata", "penguins_raw.csv"))
+
+# Clean data --------------------------------------------------------------
+
+penguins_df <- penguins_raw_df %>%
+  clean_names() %>%
+  mutate(species_short = word(species, 1)) %>%
+  mutate(sex = tolower(sex)) %>%
+  mutate(year = as.integer(lubridate::year(date_egg))) %>%
+  mutate(across(where(is.character), as.factor)) %>%
+  mutate(flipper_length_mm = as.integer(flipper_length_mm)) %>%
+  mutate(body_mass_g = as.integer(body_mass_g)) %>%
+  rename(bill_length_mm = culmen_length_mm,
+         bill_depth_mm = culmen_depth_mm) %>%
+  select(species_short,
+         island,
+         bill_length_mm,
+         bill_depth_mm,
+         flipper_length_mm,
+         body_mass_g,
+         sex,
+         year) %>%
+  rename(species = species_short) %>%
+  as.data.frame()
+
+usethis::use_data(penguins_df, penguins_raw_df, internal = TRUE, overwrite = TRUE)
+write_csv(penguins_df, here::here("inst", "extdata", "penguins.csv"))
+```
+
+## 2\. Export the data:
+
+``` r
+export <- readLines("R/penguins.R")
+```
+
+``` r
+#' Size measurements for adult foraging penguins near Palmer Station, Antarctica
+#'
+#' Includes measurements for penguin species, island in Palmer Archipelago,
+#' size (flipper length, body mass, bill dimensions), and sex.
+#' This is a subset of \code{\link{penguins_raw}}.
+#'
+#' @format A tibble with 344 rows and 8 variables:
+#' \describe{
+#'   \item{species}{a factor denoting penguin species (Adélie, Chinstrap and Gentoo)}
+#'   \item{island}{a factor denoting island in Palmer Archipelago, Antarctica (Biscoe, Dream or Torgersen)}
+#'   \item{bill_length_mm}{a number denoting bill length (millimeters)}
+#'   \item{bill_depth_mm}{a number denoting bill depth (millimeters)}
+#'   \item{flipper_length_mm}{an integer denoting flipper length (millimeters)}
+#'   \item{body_mass_g}{an integer denoting body mass (grams)}
+#'   \item{sex}{a factor denoting penguin sex (female, male)}
+#'   \item{year}{an integer denoting the study year (2007, 2008, or 2009)}
+#' }
+#' @source {Adélie penguins: Palmer Station Antarctica LTER and K. Gorman. 2020. Structural size measurements and isotopic signatures of foraging among adult male and female Adélie penguins (Pygoscelis adeliae) nesting along the Palmer Archipelago near Palmer Station, 2007-2009 ver 5. Environmental Data Initiative.} \doi{10.6073/pasta/98b16d7d563f265cb52372c8ca99e60f}
+#' @source {Gentoo penguins: Palmer Station Antarctica LTER and K. Gorman. 2020. Structural size measurements and isotopic signatures of foraging among adult male and female Gentoo penguin (Pygoscelis papua) nesting along the Palmer Archipelago near Palmer Station, 2007-2009 ver 5. Environmental Data Initiative.} \doi{10.6073/pasta/7fca67fb28d56ee2ffa3d9370ebda689}
+#' @source {Chinstrap penguins: Palmer Station Antarctica LTER and K. Gorman. 2020. Structural size measurements and isotopic signatures of foraging among adult male and female Chinstrap penguin (Pygoscelis antarcticus) nesting along the Palmer Archipelago near Palmer Station, 2007-2009 ver 6. Environmental Data Initiative.} \doi{10.6073/pasta/c14dfcfada8ea13a17536e73eb6fbe9e}
+#' @source {Originally published in: Gorman KB, Williams TD, Fraser WR (2014) Ecological Sexual Dimorphism and Environmental Variability within a Community of Antarctic Penguins (Genus Pygoscelis). PLoS ONE 9(3): e90081. doi:10.1371/journal.pone.0090081}
+"penguins"
+```
+
+-----
+
+## 3\. What are the complete package repo contents?
+
+``` r
+fs::dir_tree(recurse = T)
+#> .
+#> ├── DESCRIPTION
+#> ├── LICENSE.md
+#> ├── NAMESPACE
+#> ├── R
+#> │   ├── palmerpenguins-package.R
+#> │   ├── path-to-file.R
+#> │   ├── penguins.R
+#> │   ├── penguins_raw.R
+#> │   └── sysdata.rda
+#> ├── README.Rmd
+#> ├── README.md
+#> ├── _pkgdown.yml
+#> ├── cran-comments.md
+#> ├── data
+#> │   └── penguins.R
+#> ├── data-raw
+#> │   └── penguins.R
+#> ├── inst
+#> │   ├── CITATION
+#> │   └── extdata
+#> │       ├── penguins.csv
+#> │       └── penguins_raw.csv
+#> ├── man
+#> │   ├── figures
+#> │   │   ├── README-flipper-bill-1.png
+#> │   │   ├── README-flipper-hist-1.png
+#> │   │   ├── README-mass-flipper-1.png
+#> │   │   ├── culmen_depth.png
+#> │   │   ├── logo.png
+#> │   │   ├── lter_penguins.png
+#> │   │   └── palmerpenguins.png
+#> │   ├── palmerpenguins-package.Rd
+#> │   ├── path_to_file.Rd
+#> │   ├── penguins.Rd
+#> │   └── penguins_raw.Rd
+#> ├── palmerpenguins.Rproj
+#> ├── pkgdown
+#> │   ├── extra.css
+#> │   └── favicon
+#> │       ├── apple-touch-icon-120x120.png
+#> │       ├── apple-touch-icon-152x152.png
+#> │       ├── apple-touch-icon-180x180.png
+#> │       ├── apple-touch-icon-60x60.png
+#> │       ├── apple-touch-icon-76x76.png
+#> │       ├── apple-touch-icon.png
+#> │       ├── favicon-16x16.png
+#> │       ├── favicon-32x32.png
+#> │       └── favicon.ico
+#> └── vignettes
+#>     ├── art.Rmd
+#>     ├── download.Rmd
+#>     ├── examples.Rmd
+#>     ├── figs
+#>     │   ├── pca-loadings-plot.png
+#>     │   ├── penguin-ggpairs.png
+#>     │   ├── penguin-pairs.png
+#>     │   └── penguin-visdat.png
+#>     ├── intro.Rmd
+#>     ├── pca.Rmd
+#>     └── user_contributions.Rmd
+```
